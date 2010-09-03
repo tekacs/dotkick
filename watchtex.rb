@@ -28,25 +28,22 @@ recipe :watchtex do
       maintex = gets.chomp
     end
     @command = @command % maintex
-    puts "Watching for LaTeX file changes, reloading #{maintex}."
+    log "Watching for LaTeX file changes, reloading #{maintex}."
   end
   
   process do |files|
     refresh = false
     files.take_and_map('*.tex') do |file|
       output = `#{@command}`
-      status = $? == 0 ? :succeeded : :failed
+      succeeded = $? == 0
+      growl_status = succeeded ? :succeeded : :failed
       Kicker::Growl.growl(
-        GROWL_TYPES[status],
-        "LaTeX Build " + status.to_s,
-        output.split("\n").reverse.slice(0, 10).reverse.join("\n")
+        GROWL_TYPES[growl_status],
+        "LaTeX Build " + growl_status.to_s,
+        output.split("\n").reverse.slice(0, 5).reverse.join("\n")
       ) if Kicker::Growl.use
-      if $? == 0
-        2.times do
-          `#{@command}`
-        end
-      end
-      true
+      log "Successfully reloaded!" if succeeded
+      succeeded
     end
   end
 end
