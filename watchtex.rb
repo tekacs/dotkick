@@ -3,6 +3,18 @@
 # main file if any of them changes.
 # Useful in conjunction with subfiles.sty.
 
+# Usage:
+# 
+#   EITHER:
+# 
+#   kicker -r watchtex [--no-growl]
+# 
+#   OR, in ./.kick:
+# 
+#   MAINTEX = 'main.tex'
+#   recipe :watchtex
+
+
 recipe :watchtex do
   GROWL_TYPES = Kicker::Growl::NOTIFICATIONS
   command = "/usr/bin/env pdflatex %s"
@@ -27,6 +39,11 @@ recipe :watchtex do
         "LaTeX Build " + status.to_s,
         output.split("\n").reverse.slice(0, 10).reverse.join("\n")
       ) if Kicker::Growl.use
+      if $? == 0
+        2.times do
+          `#{command}`
+        end
+      end
       true
     end
   end
