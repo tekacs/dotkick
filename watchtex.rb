@@ -17,12 +17,13 @@
 
 
 recipe :watchtex do
-  GROWL_TYPES = Kicker::Growl::NOTIFICATIONS
-  DEFAULT_COMMAND = "/usr/bin/env pdflatex %s"
+  @growl_types = Kicker::Growl::NOTIFICATIONS
   
   startup do
     maintex = defined?(MAINTEX) ? MAINTEX : nil
-    @command = defined?(LATEX_COMMAND) ? LATEX_COMMAND : DEFAULT_COMMAND
+    @command = "/usr/bin/env pdflatex %s"
+    @command = LATEX_COMMAND if defined?(LATEX_COMMAND)
+    @command += " < /dev/null"
     until maintex =~ /\.tex$/ && File.file?(maintex)
       print "Path to main LaTeX file: "
       maintex = gets.chomp
@@ -32,18 +33,21 @@ recipe :watchtex do
   end
   
   process do |files|
-    refresh = false
     files.take_and_map('*.tex') do |file|
       output = `#{@command}`
       succeeded = $? == 0
       growl_status = succeeded ? :succeeded : :failed
       Kicker::Growl.growl(
-        GROWL_TYPES[growl_status],
+        @growl_types[growl_status],
         "LaTeX Build " + growl_status.to_s,
         output.split("\n").reverse.slice(0, 5).reverse.join("\n")
       ) if Kicker::Growl.use
       log "Successfully reloaded!" if succeeded
-      succeeded
+      if defined?(FALLTHROUGH)
+        false
+      else
+        succeeded
+      end
     end
   end
 end
