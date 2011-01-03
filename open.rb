@@ -7,7 +7,7 @@ recipe :open do
       files.take_and_map do |file|
         system 'open -g "%s"' % OPEN
         log 'Opened file %s.' % OPEN
-        (defined?(FALLTHROUGH) ? false : $?)
+        (defined?(FALLTHROUGH) ? false : $? == 0)
       end
     else
       log "No file to open given."
